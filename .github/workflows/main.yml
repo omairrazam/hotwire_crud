@@ -1,0 +1,123 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - 'main'
+      - '**'
+  pull_request:
+    branches:
+      - 'main'
+      - "**"
+
+concurrency: # Borrowed from https://github.com/nodejs/node/pull/42017
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Ruby and install gems
+        uses: ruby/setup-ruby@v1.101.0 # No need to specify a Ruby version, it's on .ruby_version
+        with:
+          bundler-cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v2.4.1
+        with:
+          node-version: 18.x
+          cache: 'yarn'
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - uses: actions/cache@v2
+        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install yarn packages
+        run: |
+          yarn install --pure-lockfile
+
+      - name: Run security checks
+        run: |
+          bin/bundler-audit --update
+          bin/brakeman -q -w2
+
+  build_and_tests_step:
+    name: Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:11-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: fms_test
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports: ["5432:5432"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Ruby and install gems
+        uses: ruby/setup-ruby@v1.101.0 # No need to specify a Ruby version, it's on .ruby_version
+        with:
+          bundler-cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v2.4.1
+        with:
+          node-version: 18.x
+          cache: 'yarn'
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - uses: actions/cache@v2
+        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install yarn packages
+        run: |
+          yarn install --pure-lockfile
+
+      - name: Setup test database
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/fms_test
+        run: |
+          cp config/database.yml.sample config/database.yml
+          bundle exec rake db:schema:load
+      - name: Ruby lint
+        run: |
+          ruby -wc **/*.rb
+          bin/rubocop
+      - name: Run tests
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/fms_test
+          CI: true
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          SECRET_KEY_BASE: test
+        run: bundle exec rails spec
