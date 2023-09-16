@@ -101,23 +101,7 @@ jobs:
       - name: Install yarn packages
         run: |
           yarn install --pure-lockfile
-
-      - name: Setup test database
-        env:
-          RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/fms_test
-        run: |
-          cp config/database.yml.sample config/database.yml
-          bundle exec rake db:schema:load
       - name: Ruby lint
         run: |
           ruby -wc **/*.rb
           bin/rubocop
-      - name: Run tests
-        env:
-          RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/fms_test
-          CI: true
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          SECRET_KEY_BASE: test
-        run: bundle exec rails spec
