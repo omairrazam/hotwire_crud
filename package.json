@@ -1,0 +1,9 @@
+{
+  "name": "hotwire_crud",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:omairrazam/hotwire_crud.git",
+  "author": "omairazam <omairr.azam@gmail.com>",
+  "license": "MIT",
+  "private": false
+}
