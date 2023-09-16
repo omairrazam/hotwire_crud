@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = 'hotwire_crud'
-  spec.version       = '0.1.2'
+  spec.version       = '1.0.0'
   spec.summary       = 'crud generator with hotwire approach and static routes'
   spec.description   = 'Crud generator with static routes which lazy loads content using content routes'
   spec.authors       = ['Umair Azam']
