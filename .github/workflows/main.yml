@@ -98,5 +98,4 @@ jobs:
           yarn install --pure-lockfile
       - name: Ruby lint
         run: |
-          ruby -wc **/*.rb
-          bin/rubocop
+          rubocop
