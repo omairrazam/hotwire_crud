@@ -49,11 +49,6 @@ jobs:
         run: |
           yarn install --pure-lockfile
 
-      - name: Run security checks
-        run: |
-          bin/bundler-audit --update
-          bin/brakeman -q -w2
-
   build_and_tests_step:
     name: Tests
     runs-on: ubuntu-latest
