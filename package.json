@@ -5,5 +5,13 @@
   "repository": "git@github.com:omairrazam/hotwire_crud.git",
   "author": "omairazam <omairr.azam@gmail.com>",
   "license": "MIT",
-  "private": false
+  "private": false,
+  
+  "devDependencies": {
+    "semantic-release": "^21.0.2"
+  },
+  "release": {
+    "branches": ["main"],
+    "npmPublish": false
+  }
 }
