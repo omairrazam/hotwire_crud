@@ -2,9 +2,7 @@
 class <%= class_name %>Controller < ApplicationController
   <% actions.each do |action|%>
     def <%= action %>
-      # Your <%= action %> action code goes here
+      @turbo_frame_tag_name = <%= class_name.pluralize.upcase %>_<%= action.upcase%>_TURBO_FRAME_TAG_NAME
     end
   <% end %>
-
-  # Define other actions here if needed
 end

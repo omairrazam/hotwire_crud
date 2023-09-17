@@ -18,12 +18,22 @@
 #
 
 # lib/generators/hotwire_crud_generator.rb
+require 'English'
 class HotwireCrudGenerator < Rails::Generators::NamedBase
   source_root File.expand_path('templates', __dir__)
 
   argument :actions, type: :array, default: %w[index edit new show]
 
   def create_static_controller_file
+    file_name_singular = file_name.singularize
+
+    @actions_data_paths = {
+      index: "#{file_name}_path",
+      new: "new_#{file_name_singular}_path",
+      edit: "edit_#{file_name_singular}_path",
+      show: "#{file_name_singular}_path"
+    }
+
     template 'static_controller.erb', File.join('app/controllers/static', "#{file_name}_controller.rb")
   end
 
@@ -51,5 +61,50 @@ class HotwireCrudGenerator < Rails::Generators::NamedBase
 
     route_namespace = 'static'
     route "namespace :#{route_namespace} do\n  resources :#{file_name}, only: #{actions.map(&:to_sym).inspect}\nend"
+  end
+
+  def generate_constants
+    constants_file_path = File.join('app', 'controllers', 'static', 'hotwire_crud_static_constants.rb')
+
+    create_file(constants_file_path) unless File.exist?(constants_file_path)
+    file_content = File.read(constants_file_path)
+
+    actions.each do |action|
+      const_name = "#{const_prefix}_#{action.upcase}_TURBO_FRAME_TAG_NAME"
+      const_value = "#{const_prefix.downcase}_#{action}"
+      unless file_content.include?(const_name)
+        append_to_file constants_file_path do
+          constants_content(const_name, const_value)
+        end
+      end
+    end
+
+    # if File.exist?(constants_file_path)
+    load constants_file_path
+    # end
+  end
+
+  def run_rubocop_with_auto_correct
+    rubocop_command = 'bundle exec rubocop -A'
+
+    system(rubocop_command)
+
+    if $CHILD_STATUS.success?
+      say('RuboCop auto-corrections applied successfully.', :green)
+    else
+      say('RuboCop auto-corrections failed.', :red)
+    end
+  end
+
+  private
+
+  def constants_content(const_name,const_value)
+    <<~RUBY
+      #{const_name} = '#{const_value}'
+    RUBY
+  end
+
+  def const_prefix
+    file_name.pluralize.upcase
   end
 end
