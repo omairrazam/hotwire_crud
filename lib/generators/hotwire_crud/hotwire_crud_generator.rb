@@ -72,10 +72,10 @@ class HotwireCrudGenerator < Rails::Generators::NamedBase
     actions.each do |action|
       const_name = "#{const_prefix}_#{action.upcase}_TURBO_FRAME_TAG_NAME"
       const_value = "#{const_prefix.downcase}_#{action}"
-      unless file_content.include?(const_name)
-        append_to_file constants_file_path do
-          constants_content(const_name, const_value)
-        end
+      next if file_content.include?(const_name)
+
+      append_to_file constants_file_path do
+        constants_content(const_name, const_value)
       end
     end
 
@@ -98,7 +98,7 @@ class HotwireCrudGenerator < Rails::Generators::NamedBase
 
   private
 
-  def constants_content(const_name,const_value)
+  def constants_content(const_name, const_value)
     <<~RUBY
       #{const_name} = '#{const_value}'
     RUBY
