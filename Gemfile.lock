@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hotwire_crud (1.0.0)
+    hotwire_crud (1.1.0)
       rails (>= 6.0)
 
 GEM
